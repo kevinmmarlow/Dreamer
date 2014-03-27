@@ -1,0 +1,33 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.android.fancyblurdemo.app.MainActivity$PlaceholderFragment">
+
+    <com.android.fancyblurdemo.volley.toolbox.NetworkImageView
+        android:id="@+id/flickrView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"/>
+
+    <com.android.fancyblurdemo.app.BlurImageView
+        android:id="@+id/blurView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+    <!--<View-->
+        <!--android:id="@+id/darkOverlay"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:background="#AA000000"-->
+        <!--android:alpha="0"/>-->
+
+</RelativeLayout>
