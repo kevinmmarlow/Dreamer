@@ -10,8 +10,6 @@ import android.widget.ImageView;
 
 import com.android.fancyblurdemo.app.imageblur.BlurError;
 import com.android.fancyblurdemo.app.imageblur.ImageBlurrer;
-import com.android.fancyblurdemo.volley.VolleyError;
-import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
 
 /**
  * Created by kevin.marlow on 3/26/14.
@@ -77,7 +75,6 @@ public class BlurImageView extends ImageView {
         // view, hold off on loading the image.
         boolean isFullyWrapContent = wrapWidth && wrapHeight;
         if (width == 0 && height == 0 && !isFullyWrapContent) {
-            Log.i("TEST", "IS FULLY WRAPPED?");
             return;
         }
 
@@ -105,10 +102,7 @@ public class BlurImageView extends ImageView {
                     }
 
                     if (blurredResponse.getBitmap() != null) {
-                        Log.i("TEST", "Finished blur " + blurredResponse.getBitmap().getHeight() + "h X " + blurredResponse.getBitmap().getWidth() + "w");
                         setImageBitmap(blurredResponse.getBitmap());
-                    } else {
-                        Log.e("TEST", "Finished blur with null bitmap.");
                     }
                 }
 

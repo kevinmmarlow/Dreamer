@@ -1,26 +1,13 @@
 package com.android.fancyblurdemo.app;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import android.database.DataSetObserver;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.TransitionDrawable;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v7.app.ActionBarActivity;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.os.Bundle;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
@@ -29,26 +16,29 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 
-import com.android.fancyblurdemo.app.imageblur.BlurError;
 import com.android.fancyblurdemo.app.imageblur.BlurManager;
-import com.android.fancyblurdemo.app.imageblur.ImageBlurrer;
 import com.android.fancyblurdemo.volley.Response;
 import com.android.fancyblurdemo.volley.VolleyError;
 import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
 import com.android.fancyblurdemo.volley.toolbox.NetworkImageView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private static final String FLICKR_API_KEY = "70fcd966ffa1676f8726a7b3fee51188";
     private static final String FLICKR_API_SECRET = "5b38c304eda85d6a";
-    private static final String FLICKR_RECENT_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=25";
-    private static final String FLICKR_SIZES_URL = "https://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=%s&format=json&photo_id=%s";
+    private static final String FLICKR_INTERESTING_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=25";
 
+    /**
+     * Data store. The photomap maps the photo id to the photo for easy retrieval.
+     */
     public static Map<String, FlickrPhoto> photoMap = new HashMap<String, FlickrPhoto>();
     public static List<FlickrPhoto> photos = new ArrayList<FlickrPhoto>();
 
@@ -60,13 +50,22 @@ public class MainActivity extends ActionBarActivity {
      * may be best to switch to a
      * {@link android.support.v4.app.FragmentStatePagerAdapter}.
      */
-    SectionsPagerAdapter mSectionsPagerAdapter;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
 
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    ViewPager mViewPager;
+    private ViewPager mViewPager;
+
+    /**
+     * The page change listener that is used for fading on scroll.
+     */
     private FragmentPageChangeListener mPageChangeListener;
+
+    /**
+     * A flag to determine if we are on a tablet.
+     */
+    private static boolean sUseHighRes = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +83,9 @@ public class MainActivity extends ActionBarActivity {
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.setOnPageChangeListener(mPageChangeListener);
 
-        VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_RECENT_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+        sUseHighRes = getResources().getBoolean(R.bool.isTablet);
+
+        VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
     }
 
 
@@ -102,9 +103,12 @@ public class MainActivity extends ActionBarActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
+//        if (id == R.id.action_settings) {
+//            sUseHighRes = !sUseHighRes;
+//            Toast.makeText(this, "High-Res is now " + (sUseHighRes ? "enabled." : "disabled."), Toast.LENGTH_SHORT).show();
+//            mSectionsPagerAdapter.notifyDataSetChanged();
+//            return true;
+//        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -128,6 +132,11 @@ public class MainActivity extends ActionBarActivity {
             // Return a PlaceholderFragment (defined as a static inner class below).
             PlaceholderFragment fragment = PlaceholderFragment.newInstance(position);
             return fragment;
+        }
+
+        @Override
+        public int getItemPosition(Object object) {
+            return POSITION_NONE;
         }
 
         @Override
@@ -234,7 +243,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     /**
-     * A placeholder fragment containing a simple view.
+     * The photo fragment.
      */
     public static class PlaceholderFragment extends Fragment {
         /**
@@ -247,7 +256,7 @@ public class MainActivity extends ActionBarActivity {
         private NetworkImageView mImageView;
         private BlurImageView mBlurImageView;
         private ProgressBar mProgressBar;
-//        private View mDarkOverlay;
+        private RobotoTextView mTitleText;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -269,20 +278,22 @@ public class MainActivity extends ActionBarActivity {
 
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
+            mCurrentPhoto = photos.get(getArguments().getInt(ARG_SECTION_NUMBER));
+
             mImageView = (NetworkImageView) rootView.findViewById(R.id.flickrView);
             mBlurImageView = (BlurImageView) rootView.findViewById(R.id.blurView);
-//            mDarkOverlay = rootView.findViewById(R.id.darkOverlay);
             mProgressBar = (ProgressBar) rootView.findViewById(R.id.progressBar);
-            mCurrentPhoto = photos.get(getArguments().getInt(ARG_SECTION_NUMBER));
+
+            mTitleText = (RobotoTextView) rootView.findViewById(R.id.titleText);
+            mTitleText.setText(mCurrentPhoto.title);
 
             mImageView.setImageListener(new ImageLoader.ImageListener() {
                 @Override
                 public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
                     if (response.getBitmap() != null && !TextUtils.isEmpty(response.getRequestUrl())) {
-//                        mBlurImageView.setVisibility(View.VISIBLE);
-//                        mBlurImageView.setImageAlpha(0);
                         mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                         mBlurImageView.setImageAlpha(0);
+                        mProgressBar.setVisibility(View.GONE);
                     }
                 }
 
@@ -292,46 +303,25 @@ public class MainActivity extends ActionBarActivity {
                 }
             });
 
-            if (TextUtils.isEmpty(mCurrentPhoto.source)) {
-                mProgressBar.setVisibility(View.VISIBLE);
-                String url = String.format(FLICKR_SIZES_URL, FLICKR_API_KEY, mCurrentPhoto.id);
-                VolleyManager.getRequestQueue().add(new PhotoSizeRequest(url, new SizeResponseListener(), new SizeErrorListener()));
-            } else {
-                mImageView.setImageUrl(mCurrentPhoto.source, VolleyManager.getImageLoader());
-                mProgressBar.setVisibility(View.GONE);
-            }
+            mImageView.setImageUrl(sUseHighRes ? mCurrentPhoto.highResUrl : mCurrentPhoto.photoUrl, VolleyManager.getImageLoader());
 
             return rootView;
         }
 
         public void setPageAlpha(float alpha) {
-//            mDarkOverlay.setAlpha(alpha);
             mBlurImageView.setImageAlpha((int) (255 * alpha));
-        }
-
-        public class SizeResponseListener implements Response.Listener<String> {
-
-            @Override
-            public void onResponse(String response) {
-                mCurrentPhoto.source = response;
-                mImageView.setImageUrl(mCurrentPhoto.source, VolleyManager.getImageLoader());
-                mProgressBar.setVisibility(View.GONE);
-            }
-        }
-
-        public class SizeErrorListener implements Response.ErrorListener {
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-//                Log.i("FAILED", error.networkResponse == null ? error.getMessage() : "Status Code: " + error.networkResponse.statusCode);
-            }
         }
     }
 
+    /**
+     * The network response listener for successful calls.
+     */
     private class ResponseListener implements Response.Listener<List<FlickrPhoto>> {
 
         @Override
         public void onResponse(List<FlickrPhoto> response) {
+            photos.clear();
+            photoMap.clear();
             for (int i = 0; i < response.size(); i++) {
                 final FlickrPhoto photo = response.get(i);
                 photos.add(photo);
@@ -341,11 +331,16 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    /**
+     * The network response listener for failed calls.
+     * Normally we would provide feedback to the user and
+     * handle the error. For now, lets just print out the error.
+     */
     private class ErrorListener implements Response.ErrorListener {
 
         @Override
         public void onErrorResponse(VolleyError error) {
-//            Log.e("FAILED", error.networkResponse == null ? error.getMessage() : "Status Code: " + error.networkResponse.statusCode);
+            Log.e("FAILED", error.networkResponse == null ? error.getMessage() : "Status Code: " + error.networkResponse.statusCode);
         }
     }
 

@@ -15,5 +15,7 @@ public class FlickrPhoto {
     public boolean isFriend;
     public boolean isFamily;
     public String source;
+    public String photoUrl;
+    public String highResUrl;
 
 }

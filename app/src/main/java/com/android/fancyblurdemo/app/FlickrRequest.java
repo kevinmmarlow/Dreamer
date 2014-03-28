@@ -50,6 +50,9 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                 photo.isPublic = obj.getInt("ispublic") != 0;
                 photo.isFriend = obj.getInt("isfriend") != 0;
                 photo.isFamily = obj.getInt("isfamily") != 0;
+                String base = "http://farm" + photo.farm + ".staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret;
+                photo.photoUrl = base + "_z.jpg";
+                photo.highResUrl = base + "_b.jpg";
                 photos.add(photo);
             }
 
