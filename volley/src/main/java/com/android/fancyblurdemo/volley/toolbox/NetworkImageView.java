@@ -19,6 +19,8 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.ViewGroup.LayoutParams;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 
 import com.android.fancyblurdemo.volley.VolleyError;
@@ -182,6 +184,8 @@ public class NetworkImageView extends ImageView {
 
                         if (response.getBitmap() != null) {
                             setImageBitmap(response.getBitmap());
+                            Animation animation = AnimationUtils.loadAnimation(getContext(), android.R.anim.fade_in);
+                            startAnimation(animation);
                         } else if (mDefaultImageId != 0) {
                             setImageResource(mDefaultImageId);
                         }

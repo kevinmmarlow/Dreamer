@@ -16,6 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ProgressBar;
 
 import com.android.fancyblurdemo.app.imageblur.BlurManager;
@@ -251,12 +253,15 @@ public class MainActivity extends ActionBarActivity {
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
+        private static final long TITLE_FADE_DELAY = 500;
+        private static final long TITLE_FADE_DURATION = 500;
 
         private FlickrPhoto mCurrentPhoto;
         private NetworkImageView mImageView;
         private BlurImageView mBlurImageView;
         private ProgressBar mProgressBar;
         private RobotoTextView mTitleText;
+        private Animation mFadeIn;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -286,6 +291,10 @@ public class MainActivity extends ActionBarActivity {
 
             mTitleText = (RobotoTextView) rootView.findViewById(R.id.titleText);
             mTitleText.setText(mCurrentPhoto.title);
+            mTitleText.setVisibility(View.GONE);
+
+            mFadeIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
+            mFadeIn.setStartOffset(TITLE_FADE_DELAY);
 
             mImageView.setImageListener(new ImageLoader.ImageListener() {
                 @Override
@@ -294,6 +303,8 @@ public class MainActivity extends ActionBarActivity {
                         mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                         mBlurImageView.setImageAlpha(0);
                         mProgressBar.setVisibility(View.GONE);
+                        mTitleText.setVisibility(View.VISIBLE);
+                        mTitleText.startAnimation(mFadeIn);
                     }
                 }
 

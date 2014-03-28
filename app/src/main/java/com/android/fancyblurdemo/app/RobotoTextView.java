@@ -22,14 +22,16 @@ public class RobotoTextView extends TextView {
     public RobotoTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
-        if (attrs != null) {
-            TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.RobotoTextView, defStyle, 0);
+        if(!isInEditMode()) {
+            if (attrs != null) {
+                TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.RobotoTextView, defStyle, 0);
 
-            int fontFace = a.getInteger(R.styleable.RobotoTextView_fontFace, 0);
-            setFontFace(fontFace);
-            a.recycle();
-        } else {
-            setFontFace(0);
+                int fontFace = a.getInteger(R.styleable.RobotoTextView_fontFace, 0);
+                setTypeface(fontFace);
+                a.recycle();
+            } else {
+                setTypeface(0);
+            }
         }
     }
 
@@ -39,11 +41,11 @@ public class RobotoTextView extends TextView {
      * 1 - Light
      * 2 - Medium
      * 3 - Bold
-     * @param fontFace
+     * @param typeface
      */
-    public void setFontFace(int fontFace) {
+    private void setTypeface(int typeface) {
         Typeface tf;
-        switch (fontFace) {
+        switch (typeface) {
             case 0:
                 tf = Typeface.createFromAsset(getContext().getAssets(), "Roboto-Regular.ttf");
                 break;
