@@ -1,7 +1,5 @@
 package com.android.fancyblurdemo.app;
 
-import android.util.Log;
-
 import com.android.fancyblurdemo.volley.NetworkResponse;
 import com.android.fancyblurdemo.volley.ParseError;
 import com.android.fancyblurdemo.volley.Response;
@@ -53,6 +51,37 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                 String base = "http://farm" + photo.farm + ".staticflickr.com/" + photo.server + "/" + photo.id + "_" + photo.secret;
                 photo.photoUrl = base + "_z.jpg";
                 photo.highResUrl = base + "_b.jpg";
+
+                String[] titleArray = photo.title.split(" ");
+                int maxLength = 1;
+                for (String string : titleArray) {
+                    maxLength = Math.max(maxLength, string.length());
+                }
+
+                int maxThresh = (int) Math.round(maxLength * 1.25);
+
+                String newTitle = "";
+                for (int j = 0; j < titleArray.length; j++) {
+                    String first = titleArray[j];
+                    int count = 0;
+                    for (int k = j + 1; k < titleArray.length; k++) {
+                        String toAdd = titleArray[k];
+                        if (toAdd.length() == 0) {
+                            continue;
+                        }
+                        if (first.length() + toAdd.length() < maxThresh) {
+                            first = first + " " + toAdd;
+                            count++;
+                        } else {
+                            break;
+                        }
+                    }
+                    newTitle = newTitle + first + (j == titleArray.length - 1 ? "" : "\n");
+                    j += count;
+                }
+                photo.title = newTitle;
+
+                photo.lineCount = (int) Math.min(5, Math.ceil(photo.title.length() / maxLength));
                 photos.add(photo);
             }
 

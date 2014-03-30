@@ -58,6 +58,8 @@ public class RobotoTextView extends TextView {
             case 3:
                 tf = Typeface.createFromAsset(getContext().getAssets(), "Roboto-Bold.ttf");
                 break;
+            case 4:
+                tf = Typeface.createFromAsset(getContext().getAssets(), "DIN-Condensed-Bold.ttf");
             default:
                 tf = Typeface.createFromAsset(getContext().getAssets(), "Roboto-Regular.ttf");
                 break;

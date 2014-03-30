@@ -3,11 +3,11 @@ package com.android.fancyblurdemo.app;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
@@ -32,11 +32,11 @@ import java.util.List;
 import java.util.Map;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends FragmentActivity {
 
     private static final String FLICKR_API_KEY = "70fcd966ffa1676f8726a7b3fee51188";
     private static final String FLICKR_API_SECRET = "5b38c304eda85d6a";
-    private static final String FLICKR_INTERESTING_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=25";
+    private static final String FLICKR_INTERESTING_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=50";
 
     /**
      * Data store. The photomap maps the photo id to the photo for easy retrieval.
@@ -169,7 +169,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    private class FragmentPageChangeListener extends ViewPager.SimpleOnPageChangeListener {
+    private class FragmentPageChangeListener implements ViewPager.OnPageChangeListener {
 
         // How fast blur happens on scroll. A number between 1 and 2 works best.
         private static final float BLUR_SENSITIVITY = (float) 1.16;
@@ -204,6 +204,14 @@ public class MainActivity extends ActionBarActivity {
         }
 
         @Override
+        public void onPageSelected(int position) {
+            // Do fade title callbacks.
+            if (mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()) != null) {
+                mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()).showTitle();
+            }
+        }
+
+        @Override
         public void onPageScrollStateChanged(int state) {
             if (state == ViewPager.SCROLL_STATE_DRAGGING) {
                 mCurrentIndex = mViewPager.getCurrentItem();
@@ -221,7 +229,7 @@ public class MainActivity extends ActionBarActivity {
                     mNextPage = mSectionsPagerAdapter.getRegisteredFragment(mCurrentIndex + 1);
                 }
             } else if (state == ViewPager.SCROLL_STATE_IDLE) {
-                mCurrentIndex = mViewPager.getCurrentItem();
+                // Reset references.
                 mPreviousPage = null;
                 mCurrentPage = null;
                 mNextPage = null;
@@ -253,8 +261,6 @@ public class MainActivity extends ActionBarActivity {
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
-        private static final long TITLE_FADE_DELAY = 500;
-        private static final long TITLE_FADE_DURATION = 500;
 
         private FlickrPhoto mCurrentPhoto;
         private NetworkImageView mImageView;
@@ -262,6 +268,7 @@ public class MainActivity extends ActionBarActivity {
         private ProgressBar mProgressBar;
         private RobotoTextView mTitleText;
         private Animation mFadeIn;
+        private boolean mIsTitleShown = false;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -293,8 +300,7 @@ public class MainActivity extends ActionBarActivity {
             mTitleText.setText(mCurrentPhoto.title);
             mTitleText.setVisibility(View.GONE);
 
-            mFadeIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
-            mFadeIn.setStartOffset(TITLE_FADE_DELAY);
+            mFadeIn = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in);
 
             mImageView.setImageListener(new ImageLoader.ImageListener() {
                 @Override
@@ -303,8 +309,6 @@ public class MainActivity extends ActionBarActivity {
                         mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                         mBlurImageView.setImageAlpha(0);
                         mProgressBar.setVisibility(View.GONE);
-                        mTitleText.setVisibility(View.VISIBLE);
-                        mTitleText.startAnimation(mFadeIn);
                     }
                 }
 
@@ -321,6 +325,14 @@ public class MainActivity extends ActionBarActivity {
 
         public void setPageAlpha(float alpha) {
             mBlurImageView.setImageAlpha((int) (255 * alpha));
+        }
+
+        public void showTitle() {
+            if (!mIsTitleShown) {
+                mTitleText.setVisibility(View.VISIBLE);
+                mTitleText.startAnimation(mFadeIn);
+                mIsTitleShown = true;
+            }
         }
     }
 
@@ -339,6 +351,7 @@ public class MainActivity extends ActionBarActivity {
                 photoMap.put(photo.id, photo);
             }
             mSectionsPagerAdapter.notifyDataSetChanged();
+            mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()).showTitle();
         }
     }
 

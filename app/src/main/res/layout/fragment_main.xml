@@ -27,21 +27,22 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"/>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/hipster_effect"/>
+
     <com.android.fancyblurdemo.app.RobotoTextView
         android:id="@+id/titleText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:background="@drawable/title_text_background"
-        android:paddingLeft="8dp"
-        android:paddingRight="12dp"
-        android:paddingTop="3dp"
-        android:paddingBottom="4dp"
-        android:layout_marginBottom="8dp"
-        android:gravity="right"
-        android:textSize="14sp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="32dp"
+        android:layout_marginRight="32dp"
+        android:gravity="center"
+        android:textSize="44sp"
+        android:textAllCaps="true"
+        android:ellipsize="none"
         android:textColor="@android:color/white"
-        roboto:fontFace="light"/>
+        roboto:fontFace="condensed" />
 
 </RelativeLayout>

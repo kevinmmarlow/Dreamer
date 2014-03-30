@@ -17,5 +17,5 @@ public class FlickrPhoto {
     public String source;
     public String photoUrl;
     public String highResUrl;
-
+    public int lineCount;
 }

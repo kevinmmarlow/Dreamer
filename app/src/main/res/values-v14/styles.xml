@@ -19,7 +19,7 @@
 
 <resources>
 
-    <style name="Theme.AppTheme" parent="@style/Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.AppTheme" parent="@android:style/Theme.Holo.NoActionBar.Fullscreen">
         <item name="android:actionBarItemBackground">@drawable/selectable_background</item>
         <item name="android:popupMenuStyle">@style/PopupMenu.AppTheme</item>
         <item name="android:dropDownListViewStyle">@style/DropDownListView.AppTheme</item>
