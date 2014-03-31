@@ -1,6 +1,12 @@
 package com.android.fancyblurdemo.app;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.DataSetObserver;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -60,6 +66,11 @@ public class MainActivity extends FragmentActivity {
     private ViewPager mViewPager;
 
     /**
+     * The view to show when there is no connectivity.
+     */
+    private RobotoTextView mNoConnectionView;
+
+    /**
      * The page change listener that is used for fading on scroll.
      */
     private FragmentPageChangeListener mPageChangeListener;
@@ -68,11 +79,20 @@ public class MainActivity extends FragmentActivity {
      * A flag to determine if we are on a tablet.
      */
     private static boolean sUseHighRes = false;
+    private boolean mIsConnected = false;
+    private ConnectionReceiver mConnectionReceiver;
+
+    private Animation mFadeIn;
+    private Animation mFadeOut;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mNoConnectionView = (RobotoTextView) findViewById(R.id.noConnectionView);
+        mFadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        mFadeOut = AnimationUtils.loadAnimation(this, R.anim.fade_out);
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -87,9 +107,37 @@ public class MainActivity extends FragmentActivity {
 
         sUseHighRes = getResources().getBoolean(R.bool.isTablet);
 
-        VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+        if (mIsConnected) {
+            VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+        } else {
+            mConnectionReceiver = new ConnectionReceiver();
+            mNoConnectionView.setVisibility(View.VISIBLE);
+            mNoConnectionView.startAnimation(mFadeIn);
+        }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Only register for changes if we didn't start with connectivity.
+        if (mConnectionReceiver != null && !mIsConnected) {
+            registerReceiver(mConnectionReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (mConnectionReceiver != null) {
+            final ConnectionReceiver receiver = mConnectionReceiver;
+            unregisterReceiver(receiver);
+            mConnectionReceiver = null;
+        }
+        super.onPause();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -117,12 +165,16 @@ public class MainActivity extends FragmentActivity {
     
 
     /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
+     * <p>A {@link FragmentPagerAdapter} that returns a fragment corresponding to
+     * one of the sections/tabs/pages. This class implements the registeredFragments
+     * paradigm in order to get references to the fragments.</p>
+     *
+     * @see <a href="http://stackoverflow.com/questions/8785221/retrieve-a-fragment-from-a-viewpager">
+     *     Retrieve a Fragment from a ViewPager</a>
      */
     public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
 
-        SparseArray<PlaceholderFragment> registeredFragments = new SparseArray<PlaceholderFragment>();
+        SparseArray<PhotoFragment> registeredFragments = new SparseArray<PhotoFragment>();
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
@@ -131,8 +183,8 @@ public class MainActivity extends FragmentActivity {
         @Override
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            PlaceholderFragment fragment = PlaceholderFragment.newInstance(position);
+            // Return a PhotoFragment (defined as a static inner class below).
+            PhotoFragment fragment = PhotoFragment.newInstance(position);
             return fragment;
         }
 
@@ -143,7 +195,7 @@ public class MainActivity extends FragmentActivity {
 
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
-            PlaceholderFragment fragment = (PlaceholderFragment) super.instantiateItem(container, position);
+            PhotoFragment fragment = (PhotoFragment) super.instantiateItem(container, position);
             registeredFragments.put(position, fragment);
             return fragment;
         }
@@ -164,11 +216,16 @@ public class MainActivity extends FragmentActivity {
             return photos.get(position).title;
         }
 
-        public PlaceholderFragment getRegisteredFragment(int position) {
+        public PhotoFragment getRegisteredFragment(int position) {
             return registeredFragments.get(position);
         }
     }
 
+    /**
+     * Callback interface for responding to page changes in the {@link EdgeEffectViewPager}.
+     *
+     * <p>This class is responsible for sending the alpha parameter to our Fragments.</p>
+     */
     private class FragmentPageChangeListener implements ViewPager.OnPageChangeListener {
 
         // How fast blur happens on scroll. A number between 1 and 2 works best.
@@ -176,9 +233,9 @@ public class MainActivity extends FragmentActivity {
 
         private int mCurrentIndex = 0;
         private int mLastIndex = 0;
-        private PlaceholderFragment mPreviousPage;
-        private PlaceholderFragment mCurrentPage;
-        private PlaceholderFragment mNextPage;
+        private PhotoFragment mPreviousPage;
+        private PhotoFragment mCurrentPage;
+        private PhotoFragment mNextPage;
 
         @Override
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -253,9 +310,10 @@ public class MainActivity extends FragmentActivity {
     }
 
     /**
-     * The photo fragment.
+     * The photo fragment. This class handles downloading and blurring of the photos,
+     * as well as animating the title TextView.
      */
-    public static class PlaceholderFragment extends Fragment {
+    public static class PhotoFragment extends Fragment implements View.OnClickListener {
         /**
          * The fragment argument representing the section number for this
          * fragment.
@@ -267,7 +325,14 @@ public class MainActivity extends FragmentActivity {
         private BlurImageView mBlurImageView;
         private ProgressBar mProgressBar;
         private RobotoTextView mTitleText;
+        private View mOverlay;
+
+        // Animations and checks.
         private Animation mFadeIn;
+        private Animation mFadeInWithDelay;
+        private Animation mFadeOut;
+        private TouchAnimListener mAnimListener;
+        private boolean mIsAnimating = false;
         private boolean mIsTitleShown = false;
         private boolean mIsImageShown = false;
         private boolean mHasHadCallback = false;
@@ -276,45 +341,63 @@ public class MainActivity extends FragmentActivity {
          * Returns a new instance of this fragment for the given section
          * number.
          */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
+        public static PhotoFragment newInstance(int sectionNumber) {
+            PhotoFragment fragment = new PhotoFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
             fragment.setArguments(args);
             return fragment;
         }
 
-        public PlaceholderFragment() {
+        /**
+         * No-op required by FragmentManager.
+         * @see
+         */
+        public PhotoFragment() {
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            rootView.setOnClickListener(this);
 
             mCurrentPhoto = photos.get(getArguments().getInt(ARG_SECTION_NUMBER));
 
             mImageView = (NetworkImageView) rootView.findViewById(R.id.flickrView);
             mBlurImageView = (BlurImageView) rootView.findViewById(R.id.blurView);
             mProgressBar = (ProgressBar) rootView.findViewById(R.id.progressBar);
+            mOverlay = rootView.findViewById(R.id.overlay);
 
             mTitleText = (RobotoTextView) rootView.findViewById(R.id.titleText);
             mTitleText.setText(mCurrentPhoto.title);
             mTitleText.setVisibility(View.GONE);
 
             mFadeIn = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in);
+            mFadeInWithDelay = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in_with_delay);
+            mFadeOut = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_out);
+
+            mAnimListener = new TouchAnimListener();
+
+            mFadeIn.setAnimationListener(mAnimListener);
+            mFadeInWithDelay.setAnimationListener(mAnimListener);
+            mFadeOut.setAnimationListener(mAnimListener);
 
             mImageView.setImageListener(new ImageLoader.ImageListener() {
                 @Override
                 public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
                     if (response.getBitmap() != null && !TextUtils.isEmpty(response.getRequestUrl())) {
+                        mOverlay.setVisibility(View.VISIBLE);
+                        Animation fullFadeIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
+                        fullFadeIn.setFillAfter(true);
+                        mOverlay.startAnimation(fullFadeIn);
                         mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                         mBlurImageView.setImageAlpha(0);
                         mProgressBar.setVisibility(View.GONE);
                         mIsImageShown = true;
                         if (!mIsTitleShown && mHasHadCallback) {
                             mTitleText.setVisibility(View.VISIBLE);
-                            mTitleText.startAnimation(mFadeIn);
+                            mTitleText.startAnimation(mFadeInWithDelay);
                             mIsTitleShown = true;
                         }
                     }
@@ -331,22 +414,62 @@ public class MainActivity extends FragmentActivity {
             return rootView;
         }
 
+        /**
+         * Set the blurred image alpha. This is called during
+         * {@link ViewPager.OnPageChangeListener#onPageScrolled(int, float, int)}.
+         *
+         * @param alpha The alpha value.
+         */
         public void setPageAlpha(float alpha) {
             mBlurImageView.setImageAlpha((int) (255 * alpha));
         }
 
+        /**
+         * Fade the title in if it is not shown.
+         */
         public void showTitle() {
             mHasHadCallback = true;
             if (!mIsTitleShown && mIsImageShown) {
                 mTitleText.setVisibility(View.VISIBLE);
-                mTitleText.startAnimation(mFadeIn);
+                mTitleText.startAnimation(mFadeInWithDelay);
                 mIsTitleShown = true;
             }
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (!mIsAnimating) {
+                if (mIsTitleShown) {
+                    mTitleText.startAnimation(mFadeOut);
+                    mIsTitleShown = false;
+                } else if (mHasHadCallback && mIsImageShown) {
+                    mTitleText.startAnimation(mFadeIn);
+                    mIsTitleShown = true;
+                }
+            }
+        }
+
+        // Disable user interaction while animating, mostly for elegance.
+        private class TouchAnimListener implements Animation.AnimationListener {
+
+            @Override
+            public void onAnimationStart(Animation animation) {
+                mIsAnimating = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mIsAnimating = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
         }
     }
 
     /**
-     * The network response listener for successful calls.
+     * The network response listener for successful calls. Upon response,
+     * the data model is repopulated and the adapter is notified.
      */
     private class ResponseListener implements Response.Listener<List<FlickrPhoto>> {
 
@@ -360,7 +483,14 @@ public class MainActivity extends FragmentActivity {
                 photoMap.put(photo.id, photo);
             }
             mSectionsPagerAdapter.notifyDataSetChanged();
-            mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()).showTitle();
+
+            /**
+             * Our title fade algorithm works on page selection, which is not called for the first item.
+             * Therefore, we call it manually.
+             */
+            if (mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()) != null) {
+                mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()).showTitle();
+            }
         }
     }
 
@@ -374,6 +504,30 @@ public class MainActivity extends FragmentActivity {
         @Override
         public void onErrorResponse(VolleyError error) {
             Log.e("FAILED", error.networkResponse == null ? error.getMessage() : "Status Code: " + error.networkResponse.statusCode);
+        }
+    }
+
+    /**
+     * The {@link BroadcastReceiver} responsible for monitoring network changes.
+     * This is used when the app is launched without network connectivity.
+     */
+    private class ConnectionReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final boolean wasConnected = mIsConnected;
+            ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            mIsConnected = activeNetwork != null && activeNetwork.isConnected();
+            if (!wasConnected && mIsConnected) {
+                mNoConnectionView.startAnimation(mFadeOut);
+                VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+                if (mConnectionReceiver != null) {
+                    final ConnectionReceiver receiver = mConnectionReceiver;
+                    unregisterReceiver(receiver);
+                    mConnectionReceiver = null;
+                }
+            }
         }
     }
 

@@ -79,6 +79,13 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                     newTitle = newTitle + first + (j == titleArray.length - 1 ? "" : "\n");
                     j += count;
                 }
+
+//                final String DOUBLE_BYTE_SPACE = "\u3000";
+//                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1
+//                        && android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+//                    newTitle = DOUBLE_BYTE_SPACE + newTitle + DOUBLE_BYTE_SPACE;
+//                }
+
                 photo.title = newTitle;
 
                 photo.lineCount = (int) Math.min(5, Math.ceil(photo.title.length() / maxLength));

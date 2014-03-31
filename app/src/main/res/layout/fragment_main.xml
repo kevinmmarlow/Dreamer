@@ -28,9 +28,11 @@
         android:scaleType="centerCrop"/>
 
     <View
+        android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/hipster_effect"/>
+        android:background="@drawable/hipster_effect"
+        android:visibility="gone"/>
 
     <com.android.fancyblurdemo.app.RobotoTextView
         android:id="@+id/titleText"

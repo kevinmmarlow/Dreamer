@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="apptheme_color">#48ada8</color>
+    <color name="apptheme_color">#FF48ADA8</color>
     <color name="offwhite">#DD2F3133</color>
+    <color name="edgeeffect_color">#FF48ADA8</color>
 </resources>
