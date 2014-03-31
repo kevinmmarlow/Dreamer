@@ -14,3 +14,4 @@ This app showcases the use of Google Volley and a fast asynchronous image blur. 
 
 ###Features in progress
 * Custom word wrapping to provide best-fit centered text.
+* Unit testing.
