@@ -269,6 +269,8 @@ public class MainActivity extends FragmentActivity {
         private RobotoTextView mTitleText;
         private Animation mFadeIn;
         private boolean mIsTitleShown = false;
+        private boolean mIsImageShown = false;
+        private boolean mHasHadCallback = false;
 
         /**
          * Returns a new instance of this fragment for the given section
@@ -309,6 +311,12 @@ public class MainActivity extends FragmentActivity {
                         mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                         mBlurImageView.setImageAlpha(0);
                         mProgressBar.setVisibility(View.GONE);
+                        mIsImageShown = true;
+                        if (!mIsTitleShown && mHasHadCallback) {
+                            mTitleText.setVisibility(View.VISIBLE);
+                            mTitleText.startAnimation(mFadeIn);
+                            mIsTitleShown = true;
+                        }
                     }
                 }
 
@@ -328,7 +336,8 @@ public class MainActivity extends FragmentActivity {
         }
 
         public void showTitle() {
-            if (!mIsTitleShown) {
+            mHasHadCallback = true;
+            if (!mIsTitleShown && mIsImageShown) {
                 mTitleText.setVisibility(View.VISIBLE);
                 mTitleText.startAnimation(mFadeIn);
                 mIsTitleShown = true;
