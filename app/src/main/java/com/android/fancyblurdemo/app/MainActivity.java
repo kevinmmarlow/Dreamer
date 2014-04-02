@@ -14,23 +14,17 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ProgressBar;
 
-import com.android.fancyblurdemo.app.imageblur.BlurManager;
 import com.android.fancyblurdemo.volley.Response;
 import com.android.fancyblurdemo.volley.VolleyError;
-import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
-import com.android.fancyblurdemo.volley.toolbox.NetworkImageView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +72,7 @@ public class MainActivity extends FragmentActivity {
     /**
      * A flag to determine if we are on a tablet.
      */
-    private static boolean sUseHighRes = false;
+    public static boolean sUseHighRes = false;
     private boolean mIsConnected = false;
     private ConnectionReceiver mConnectionReceiver;
 
@@ -161,8 +155,6 @@ public class MainActivity extends FragmentActivity {
 //        }
         return super.onOptionsItemSelected(item);
     }
-
-    
 
     /**
      * <p>A {@link FragmentPagerAdapter} that returns a fragment corresponding to
@@ -306,164 +298,6 @@ public class MainActivity extends FragmentActivity {
         @Override
         public void onInvalidated() {
             mPageChangeListener.dataSetChanged();
-        }
-    }
-
-    /**
-     * The photo fragment. This class handles downloading and blurring of the photos,
-     * as well as animating the title TextView.
-     */
-    public static class PhotoFragment extends Fragment implements View.OnClickListener {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
-
-        private FlickrPhoto mCurrentPhoto;
-        private NetworkImageView mImageView;
-        private BlurImageView mBlurImageView;
-        private ProgressBar mProgressBar;
-        private RobotoTextView mTitleText;
-        private View mOverlay;
-
-        // Animations and checks.
-        private Animation mFadeIn;
-        private Animation mFadeInWithDelay;
-        private Animation mFadeOut;
-        private TouchAnimListener mAnimListener;
-        private boolean mIsAnimating = false;
-        private boolean mIsTitleShown = false;
-        private boolean mIsImageShown = false;
-        private boolean mHasHadCallback = false;
-
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PhotoFragment newInstance(int sectionNumber) {
-            PhotoFragment fragment = new PhotoFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        /**
-         * No-op required by FragmentManager.
-         * @see
-         */
-        public PhotoFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            rootView.setOnClickListener(this);
-
-            mCurrentPhoto = photos.get(getArguments().getInt(ARG_SECTION_NUMBER));
-
-            mImageView = (NetworkImageView) rootView.findViewById(R.id.flickrView);
-            mBlurImageView = (BlurImageView) rootView.findViewById(R.id.blurView);
-            mProgressBar = (ProgressBar) rootView.findViewById(R.id.progressBar);
-            mOverlay = rootView.findViewById(R.id.overlay);
-
-            mTitleText = (RobotoTextView) rootView.findViewById(R.id.titleText);
-            mTitleText.setText(mCurrentPhoto.title);
-            mTitleText.setVisibility(View.GONE);
-
-            mFadeIn = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in);
-            mFadeInWithDelay = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in_with_delay);
-            mFadeOut = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_out);
-
-            mAnimListener = new TouchAnimListener();
-
-            mFadeIn.setAnimationListener(mAnimListener);
-            mFadeInWithDelay.setAnimationListener(mAnimListener);
-            mFadeOut.setAnimationListener(mAnimListener);
-
-            mImageView.setImageListener(new ImageLoader.ImageListener() {
-                @Override
-                public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
-                    if (response.getBitmap() != null && !TextUtils.isEmpty(response.getRequestUrl())) {
-                        mOverlay.setVisibility(View.VISIBLE);
-                        Animation fullFadeIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
-                        fullFadeIn.setFillAfter(true);
-                        mOverlay.startAnimation(fullFadeIn);
-                        mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
-                        mBlurImageView.setImageAlpha(0);
-                        mProgressBar.setVisibility(View.GONE);
-                        mIsImageShown = true;
-                        if (!mIsTitleShown && mHasHadCallback) {
-                            mTitleText.setVisibility(View.VISIBLE);
-                            mTitleText.startAnimation(mFadeInWithDelay);
-                            mIsTitleShown = true;
-                        }
-                    }
-                }
-
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // Do nothing.
-                }
-            });
-
-            mImageView.setImageUrl(sUseHighRes ? mCurrentPhoto.highResUrl : mCurrentPhoto.photoUrl, VolleyManager.getImageLoader());
-
-            return rootView;
-        }
-
-        /**
-         * Set the blurred image alpha. This is called during
-         * {@link ViewPager.OnPageChangeListener#onPageScrolled(int, float, int)}.
-         *
-         * @param alpha The alpha value.
-         */
-        public void setPageAlpha(float alpha) {
-            mBlurImageView.setImageAlpha((int) (255 * alpha));
-        }
-
-        /**
-         * Fade the title in if it is not shown.
-         */
-        public void showTitle() {
-            mHasHadCallback = true;
-            if (!mIsTitleShown && mIsImageShown) {
-                mTitleText.setVisibility(View.VISIBLE);
-                mTitleText.startAnimation(mFadeInWithDelay);
-                mIsTitleShown = true;
-            }
-        }
-
-        @Override
-        public void onClick(View v) {
-            if (!mIsAnimating) {
-                if (mIsTitleShown) {
-                    mTitleText.startAnimation(mFadeOut);
-                    mIsTitleShown = false;
-                } else if (mHasHadCallback && mIsImageShown) {
-                    mTitleText.startAnimation(mFadeIn);
-                    mIsTitleShown = true;
-                }
-            }
-        }
-
-        // Disable user interaction while animating, mostly for elegance.
-        private class TouchAnimListener implements Animation.AnimationListener {
-
-            @Override
-            public void onAnimationStart(Animation animation) {
-                mIsAnimating = true;
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                mIsAnimating = false;
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {}
         }
     }
 

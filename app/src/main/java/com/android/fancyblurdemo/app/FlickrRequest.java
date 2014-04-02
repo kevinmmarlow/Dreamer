@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by kevin.marlow on 3/20/14.
@@ -44,7 +45,7 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                 photo.secret = obj.getString("secret");
                 photo.server = obj.getString("server");
                 photo.farm = obj.getInt("farm");
-                photo.title = obj.getString("title");
+                photo.title = obj.getString("title").trim().toUpperCase(Locale.US);
                 photo.isPublic = obj.getInt("ispublic") != 0;
                 photo.isFriend = obj.getInt("isfriend") != 0;
                 photo.isFamily = obj.getInt("isfamily") != 0;
@@ -52,43 +53,45 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                 photo.photoUrl = base + "_z.jpg";
                 photo.highResUrl = base + "_b.jpg";
 
-                String[] titleArray = photo.title.split(" ");
-                int maxLength = 1;
-                for (String string : titleArray) {
-                    maxLength = Math.max(maxLength, string.length());
+                if (photo.title.contains("...")) {
+                    photo.title = photo.title.replace("...", "... ");
                 }
+                photo.title = photo.title.replaceAll("[^\\x00-\\x7f]+", "").trim();
 
-                int maxThresh = (int) Math.round(maxLength * 1.25);
-
+                String[] split = photo.title.split(" ");
                 String newTitle = "";
-                for (int j = 0; j < titleArray.length; j++) {
-                    String first = titleArray[j];
-                    int count = 0;
-                    for (int k = j + 1; k < titleArray.length; k++) {
-                        String toAdd = titleArray[k];
-                        if (toAdd.length() == 0) {
-                            continue;
-                        }
-                        if (first.length() + toAdd.length() < maxThresh) {
-                            first = first + " " + toAdd;
-                            count++;
+                String longest = "";
+                if (split.length != 0) {
+                    int avgCharCount = Math.round(photo.title.length() / split.length);
+                    if (avgCharCount > 14) {
+                        avgCharCount /= 2;
+                    }
+
+                    for (String string : split) {
+                        if (string.length() > (2 * avgCharCount)) {
+                            String part1 = string.substring(0, avgCharCount);
+                            String part2 = string.substring(avgCharCount, string.length());
+                            newTitle = newTitle + " " + part1 + "\n" + part2;
+                            if (part1.length() > longest.length() || part2.length() > longest.length()) {
+                                longest = (part1.length() > part2.length()) ? part1 : part2;
+                            }
                         } else {
-                            break;
+                            newTitle = newTitle + " " + string;
+                            if (string.length() > longest.length()) {
+                                longest = string;
+                            }
                         }
                     }
-                    newTitle = newTitle + first + (j == titleArray.length - 1 ? "" : "\n");
-                    j += count;
                 }
 
-//                final String DOUBLE_BYTE_SPACE = "\u3000";
-//                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1
-//                        && android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-//                    newTitle = DOUBLE_BYTE_SPACE + newTitle + DOUBLE_BYTE_SPACE;
-//                }
+                int count = longest.length();
+                longest = "";
+                for (int j = count; j > 1; j--) {
+                    longest += "W";
+                }
 
-                photo.title = newTitle;
-
-                photo.lineCount = (int) Math.min(5, Math.ceil(photo.title.length() / maxLength));
+                photo.title = newTitle.trim();
+                photo.preferredWidthStr = longest;
                 photos.add(photo);
             }
 

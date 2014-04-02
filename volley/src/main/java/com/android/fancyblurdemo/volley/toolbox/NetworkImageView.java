@@ -82,10 +82,14 @@ public class NetworkImageView extends ImageView {
      * @param imageLoader ImageLoader that will be used to make the request.
      */
     public void setImageUrl(String url, ImageLoader imageLoader) {
+        this.setImageUrl(url, imageLoader, false);
+    }
+
+    public void setImageUrl(String url, ImageLoader imageLoader, boolean animate) {
         mUrl = url;
         mImageLoader = imageLoader;
         // The URL has potentially changed. See if we need to load it.
-        loadImageIfNecessary(false);
+        loadImageIfNecessary(false, animate);
     }
 
     /**
@@ -108,7 +112,7 @@ public class NetworkImageView extends ImageView {
      * Loads the image for the view if it isn't already loaded.
      * @param isInLayoutPass True if this was invoked from a layout pass, false otherwise.
      */
-    void loadImageIfNecessary(final boolean isInLayoutPass) {
+    void loadImageIfNecessary(final boolean isInLayoutPass, final boolean animate) {
         int width = getWidth();
         int height = getHeight();
 
@@ -184,8 +188,10 @@ public class NetworkImageView extends ImageView {
 
                         if (response.getBitmap() != null) {
                             setImageBitmap(response.getBitmap());
-                            Animation animation = AnimationUtils.loadAnimation(getContext(), android.R.anim.fade_in);
-                            startAnimation(animation);
+                            if (animate) {
+                                Animation animation = AnimationUtils.loadAnimation(getContext(), android.R.anim.fade_in);
+                                startAnimation(animation);
+                            }
                         } else if (mDefaultImageId != 0) {
                             setImageResource(mDefaultImageId);
                         }
@@ -211,7 +217,7 @@ public class NetworkImageView extends ImageView {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        loadImageIfNecessary(true);
+        loadImageIfNecessary(true, false);
     }
 
     @Override
