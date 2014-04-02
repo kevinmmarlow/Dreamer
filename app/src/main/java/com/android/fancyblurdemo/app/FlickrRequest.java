@@ -21,9 +21,11 @@ import java.util.Locale;
 public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
 
     private final String jsonReqsponseWrapper = "jsonFlickrApi(";
+    private final boolean mIsHighRes;
 
-    public FlickrRequest(String url, Response.Listener<List<FlickrPhoto>> listener, Response.ErrorListener errorListener) {
+    public FlickrRequest(String url, boolean isHighRes, Response.Listener<List<FlickrPhoto>> listener, Response.ErrorListener errorListener) {
         super(Method.GET, url, null, listener, errorListener);
+        mIsHighRes = isHighRes;
     }
 
     @Override
@@ -68,7 +70,7 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                     }
 
                     for (String string : split) {
-                        if (string.length() > (2 * avgCharCount)) {
+                        if (string.length() > ((mIsHighRes ? 3 : 2) * avgCharCount)) {
                             String part1 = string.substring(0, avgCharCount);
                             String part2 = string.substring(avgCharCount, string.length());
                             newTitle = newTitle + " " + part1 + "\n" + part2;

@@ -106,7 +106,7 @@ public class MainActivity extends FragmentActivity {
         mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
         if (mIsConnected) {
-            VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+            VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), sUseHighRes, new ResponseListener(), new ErrorListener()));
         } else {
             mConnectionReceiver = new ConnectionReceiver();
             mNoConnectionView.setVisibility(View.VISIBLE);
@@ -355,7 +355,7 @@ public class MainActivity extends FragmentActivity {
             mIsConnected = activeNetwork != null && activeNetwork.isConnected();
             if (!wasConnected && mIsConnected) {
                 mNoConnectionView.startAnimation(mFadeOut);
-                VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), new ResponseListener(), new ErrorListener()));
+                VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), sUseHighRes, new ResponseListener(), new ErrorListener()));
                 if (mConnectionReceiver != null) {
                     final ConnectionReceiver receiver = mConnectionReceiver;
                     unregisterReceiver(receiver);
