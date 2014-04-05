@@ -7,11 +7,11 @@ This app showcases the use of Google Volley and a fast asynchronous image blur. 
 * Fast Http requests and JSON downloading, parsing, and caching.
 * Asynchronous image downloading and caching using a runtime memory cache.
 * Asynchronous image blurring and caching using a DiskLruCache.
+* Custom word wrapping to provide best-fit centered text.
 * Dynamic alpha animations for fragment views.
 * Proper connectivity monitoring.
 * Custom typeface implementation.
 * Custom themeing.
 
 ###Features in progress
-* Custom word wrapping to provide best-fit centered text.
 * Unit testing.
