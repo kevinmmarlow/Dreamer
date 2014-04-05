@@ -5,13 +5,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
-import com.android.fancyblurdemo.app.imageblur.BlurError;
-import com.android.fancyblurdemo.app.imageblur.BlurQueue;
-import com.android.fancyblurdemo.app.imageblur.BlurRequest;
-import com.android.fancyblurdemo.app.imageblur.BlurResponse;
-
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.UUID;
 
 /**
  * Created by kevin.marlow on 3/26/14.
@@ -380,5 +376,13 @@ public class ImageBlurrer {
      */
     private static String createCacheKey(String originalCacheKey) {
         return String.valueOf(originalCacheKey.hashCode());
+    }
+
+    /**
+     * Generates a cache key.
+     * @return
+     */
+    private static String generateCacheKey() {
+        return UUID.randomUUID().toString();
     }
 }

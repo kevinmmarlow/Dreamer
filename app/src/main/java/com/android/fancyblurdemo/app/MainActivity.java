@@ -4,10 +4,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -18,6 +20,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -38,6 +41,11 @@ public class MainActivity extends FragmentActivity {
     private static final String FLICKR_API_SECRET = "5b38c304eda85d6a";
     private static final String FLICKR_INTERESTING_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=50";
 
+    private static final String ARG_HAS_DOWNLOADED = "has_downloaded";
+    private static final String ARG_USER_LEARNED_SCROLL = "user_scrolled";
+
+    private static final long SCROLL_DELAY = 4000; // 4 second scroll delay.
+
     /**
      * Data store. The photomap maps the photo id to the photo for easy retrieval.
      */
@@ -57,7 +65,7 @@ public class MainActivity extends FragmentActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    private ViewPager mViewPager;
+    private EdgeEffectViewPager mViewPager;
 
     /**
      * The view to show when there is no connectivity.
@@ -79,10 +87,44 @@ public class MainActivity extends FragmentActivity {
     private Animation mFadeIn;
     private Animation mFadeOut;
 
+    /** Handle autoscrolling. */
+    private boolean mUserLearned;
+    private boolean mForwardScroll = true;
+    private Handler mScrollHandler;
+    private Runnable mScroller = new Runnable() {
+        @Override
+        public void run() {
+            if (mViewPager != null && mSectionsPagerAdapter != null && mSectionsPagerAdapter.getCount() > 1) {
+                if (mViewPager.getCurrentItem() + 1 >= mSectionsPagerAdapter.getCount()) {
+                    mForwardScroll = false;
+                } else if (mForwardScroll == false && mViewPager.getCurrentItem() == 0) {
+                    mForwardScroll = true;
+                }
+                if (mForwardScroll) {
+                    mViewPager.setCurrentItem(mViewPager.getCurrentItem() + 1, true);
+                } else {
+                    mViewPager.setCurrentItem(mViewPager.getCurrentItem() - 1, true);
+                }
+                mScrollHandler.postDelayed(mScroller, SCROLL_DELAY);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        final boolean hasDownloaded = savedInstanceState == null ? false : savedInstanceState.getBoolean(ARG_HAS_DOWNLOADED, false);
+
+        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        mUserLearned = prefs.getBoolean(ARG_USER_LEARNED_SCROLL, false);
+
+        sUseHighRes = getResources().getBoolean(R.bool.isTablet);
+
+        if (!mUserLearned) {
+            mScrollHandler = new Handler();
+        }
 
         mNoConnectionView = (RobotoTextView) findViewById(R.id.noConnectionView);
         mFadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
@@ -95,22 +137,34 @@ public class MainActivity extends FragmentActivity {
         mSectionsPagerAdapter.registerDataSetObserver(new PagerObserver());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager = (EdgeEffectViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.setOnPageChangeListener(mPageChangeListener);
+        mViewPager.setScrollDurationFactor(sUseHighRes ? 5 : 3);
+        mViewPager.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (!mUserLearned) {
+                    mUserLearned = true;
+                    mScrollHandler.removeCallbacks(mScroller);
+                    // Reset the scroll factor once the user has touched.
+                    mViewPager.setScrollDurationFactor(1);
+                }
+                return false;
+            }
+        });
 
-        sUseHighRes = getResources().getBoolean(R.bool.isTablet);
-
-        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-
-        if (mIsConnected) {
-            VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), sUseHighRes, new ResponseListener(), new ErrorListener()));
-        } else {
-            mConnectionReceiver = new ConnectionReceiver();
-            mNoConnectionView.setVisibility(View.VISIBLE);
-            mNoConnectionView.startAnimation(mFadeIn);
+        if (!hasDownloaded) {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            mIsConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            if (mIsConnected) {
+                VolleyManager.getRequestQueue().add(new FlickrRequest(String.format(FLICKR_INTERESTING_PHOTOS_URL, FLICKR_API_KEY), sUseHighRes, new ResponseListener(), new ErrorListener()));
+            } else {
+                mConnectionReceiver = new ConnectionReceiver();
+                mNoConnectionView.setVisibility(View.VISIBLE);
+                mNoConnectionView.startAnimation(mFadeIn);
+            }
         }
     }
 
@@ -325,6 +379,13 @@ public class MainActivity extends FragmentActivity {
             if (mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()) != null) {
                 mSectionsPagerAdapter.getRegisteredFragment(mViewPager.getCurrentItem()).showTitle();
             }
+
+            /**
+             * Auto-scroll if the user has not tried to scroll.
+             */
+            if (!mUserLearned) {
+                mScrollHandler.postDelayed(mScroller, SCROLL_DELAY);
+            }
         }
     }
 
@@ -365,4 +426,9 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(ARG_HAS_DOWNLOADED, true);
+    }
 }

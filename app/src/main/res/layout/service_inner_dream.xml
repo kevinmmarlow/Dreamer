@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:roboto="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/side_borders"
+                android:paddingLeft="1dp"
+                android:paddingRight="1dp">
+
+    <com.android.fancyblurdemo.volley.toolbox.NetworkImageView
+        android:id="@+id/flickrView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"/>
+
+    <com.android.fancyblurdemo.app.BlurImageView
+        android:id="@+id/blurView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+
+    <View
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/hipster_effect"
+        android:visibility="gone"/>
+
+    <com.android.fancyblurdemo.app.RobotoTextView
+        android:id="@+id/titleText"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="@dimen/title_text_margin"
+        android:gravity="center"
+        android:textAllCaps="true"
+        android:ellipsize="none"
+        android:textColor="@android:color/white"
+        roboto:fontFace="condensed"/>
+
+</RelativeLayout>

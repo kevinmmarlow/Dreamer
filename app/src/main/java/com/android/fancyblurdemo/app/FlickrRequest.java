@@ -92,6 +92,8 @@ public class FlickrRequest extends JsonRequest<List<FlickrPhoto>> {
                     longest += "W";
                 }
 
+                longest += "w";
+
                 photo.title = newTitle.trim();
                 photo.preferredWidthStr = longest;
                 photos.add(photo);

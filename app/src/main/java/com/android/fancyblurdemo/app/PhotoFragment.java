@@ -1,12 +1,9 @@
 package com.android.fancyblurdemo.app;
 
 import android.graphics.Point;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.Layout;
-import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -31,11 +28,9 @@ import com.android.fancyblurdemo.volley.toolbox.NetworkImageView;
  */
 public class PhotoFragment extends Fragment implements View.OnClickListener {
 
-    /**
-     * The fragment argument representing the section number for this
-     * fragment.
-     */
-    private static final String ARG_SECTION_NUMBER = "section_number";
+    /** The fragment argument representing the page number for this fragment. */
+    private static final String ARG_PAGE_NUMBER = "page_number";
+    /** The fragment argument tracking if the image has been shown for this fragment. */
     private static final String ARG_IMAGE_SHOWN = "image_shown";
 
     private FlickrPhoto mCurrentPhoto;
@@ -70,7 +65,7 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
     public static PhotoFragment newInstance(int sectionNumber) {
         PhotoFragment fragment = new PhotoFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+        args.putInt(ARG_PAGE_NUMBER, sectionNumber);
         args.putBoolean(ARG_IMAGE_SHOWN, false);
         fragment.setArguments(args);
         return fragment;
@@ -84,13 +79,22 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            mIsImageShown = savedInstanceState.getBoolean(ARG_IMAGE_SHOWN, false);
+            mCurrentPhoto = MainActivity.photos.get(savedInstanceState.getInt(ARG_PAGE_NUMBER));
+        } else {
+            mCurrentPhoto = MainActivity.photos.get(getArguments().getInt(ARG_PAGE_NUMBER));
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         rootView.setOnClickListener(this);
-
-        mCurrentPhoto = MainActivity.photos.get(getArguments().getInt(ARG_SECTION_NUMBER));
-        mIsImageShown = getArguments().getBoolean(ARG_IMAGE_SHOWN, false);
 
         mImageView = (NetworkImageView) rootView.findViewById(R.id.flickrView);
         mBlurImageView = (BlurImageView) rootView.findViewById(R.id.blurView);
@@ -133,7 +137,8 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
             width = display.getWidth() - 2 * titleTextMargin;
             height = display.getHeight() - 2 * titleTextMargin;
         }
-        new PreCompositeTextTask(paint, width, height).execute(mCurrentPhoto.title, mCurrentPhoto.preferredWidthStr);
+
+        new TextSizeTask(paint, width, height).execute(mCurrentPhoto.title, mCurrentPhoto.preferredWidthStr);
 
         mTitleText.setVisibility(View.GONE);
 
@@ -158,12 +163,12 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
                     mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
                     mBlurImageView.setImageAlpha(0);
                     mProgressBar.setVisibility(View.GONE);
-                    mIsImageShown = true;
-                    if (!mIsTitleShown && mHasHadCallback) {
+                    if (!mIsTitleShown && (mHasHadCallback || mIsImageShown)) {
                         mTitleText.setVisibility(View.VISIBLE);
                         mTitleText.startAnimation(mFadeInWithDelay);
                         mIsTitleShown = true;
                     }
+                    mIsImageShown = true;
                 }
             }
 
@@ -173,7 +178,8 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
             }
         });
 
-        mImageView.setImageUrl(MainActivity.sUseHighRes ? mCurrentPhoto.highResUrl : mCurrentPhoto.photoUrl, VolleyManager.getImageLoader(), !mIsImageShown);
+//        Log.i("TAG", "Is downloading image - " + mCurrentPhoto.title);
+        mImageView.setImageUrl(MainActivity.sUseHighRes ? mCurrentPhoto.highResUrl : mCurrentPhoto.photoUrl, VolleyManager.getImageLoader(), true);
 
         return rootView;
     }
@@ -316,122 +322,19 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(ARG_IMAGE_SHOWN, mIsImageShown);
+        outState.putInt(ARG_PAGE_NUMBER, getArguments().getInt(ARG_PAGE_NUMBER));
     }
 
-    private class PreCompositeTextTask extends AsyncTask<String, Void, Integer> {
+    private class TextSizeTask extends PreCompositeTextTask {
 
-        private static final int MIN_TEXT_SIZE = 28;
-        private static final int MAX_TEXT_SIZE = 240;
-
-        private final TextPaint mPaint;
-        private final int mMaxWidth;
-        private final int mMaxHeight;
-
-        private PreCompositeTextTask(TextPaint paint, int maxWidth, int maxHeight) {
-            // Make a copy
-            mPaint = new TextPaint(paint);
-            mMaxWidth = maxWidth;
-            mMaxHeight = maxHeight;
+        private TextSizeTask(TextPaint paint, int maxWidth, int maxHeight) {
+            super(paint, maxWidth, maxHeight);
         }
-
         @Override
-        protected Integer doInBackground(String... params) {
-
-            if (params.length != 0) {
-
-                String text = params[0];
-                String prefWidth = params.length == 1 ? "" : params[1];
-
-                // Only perform the calculation if the text was passed in.
-                if (!TextUtils.isEmpty(text)) {
-
-                    // If preferred width string is empty, go ahead and calculate it.
-                    if (TextUtils.isEmpty(prefWidth)) {
-                        String[] split = text.split(" |\\r|\\n");
-                        int len = 0;
-                        for (String string : split) {
-                            if (string.length() > len) {
-                                len = string.length();
-                            }
-                        }
-                        for (int i = len; i > 1; i--) {
-                            prefWidth += "W";
-                        }
-                    }
-
-                    return resizeText(text, prefWidth, mMaxWidth, mMaxHeight);
-
-
-                }
-            }
-
-            return null;
+        public void doOnComplete(int textSize) {
+            // Some devices try to auto adjust line spacing, so force default line spacing
+            // and invalidate the layout as a side effect
+            mTitleText.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
         }
-
-        @Override
-        protected void onPostExecute(Integer integer) {
-            if (integer != null) {
-                // Some devices try to auto adjust line spacing, so force default line spacing
-                // and invalidate the layout as a side effect
-                mTitleText.setTextSize(TypedValue.COMPLEX_UNIT_PX, integer);
-            }
-        }
-
-        /**
-         * Resize the text size with specified width and height
-         * @param text
-         * @param prefWidth
-         * @param width
-         * @param height
-         */
-        public int resizeText(String text, String prefWidth, int width, int height) {
-            // Do not resize if the view does not have dimensions or there is no text
-            if (height <= 0 || width <= 0) {
-                return width;
-            }
-            // Use a binary search to filter down to the appropriate size.
-            return binarySearch(MIN_TEXT_SIZE, MAX_TEXT_SIZE, text, prefWidth, mPaint, width, height);
-        }
-
-        // Perform a binary search to determine appropriate text size.
-        private int binarySearch(int minTextSize, int maxTextSize, CharSequence source, String longest, TextPaint paint, int widthLimit, int heightLimit) {
-
-            int lastBest = minTextSize;
-            int lo = minTextSize;
-            int hi = maxTextSize;
-            int mid = 0;
-            while (lo < hi) {
-                mid = (lo + hi) >>> 1;
-                int midValCmp = 0;
-                paint.setTextSize(mid);
-                float currWidth = getTextWidth(longest, paint);
-                float currHeight = getTextHeight(source, paint, widthLimit);
-                if (currWidth > widthLimit || currHeight > heightLimit) {
-                    hi = mid - 2;
-                    lastBest = hi;
-                } else {
-                    lastBest = lo;
-                    lo = mid + 2;
-                }
-            }
-            // make sure to return last best
-            // this is what should always be returned
-            return lastBest;
-        }
-
-        // Use a static layout to render text off screen before measuring.
-        private int getTextHeight(CharSequence source, TextPaint paint, int width) {
-            // Have to make a copy because StaticLayout alters paint.
-            TextPaint paintCopy = new TextPaint(paint);
-            // Measure using a static layout
-            StaticLayout layout = new StaticLayout(source, paintCopy, width, Layout.Alignment.ALIGN_CENTER, (float) 1.0, (float) 0.0, true);
-            return layout.getHeight();
-        }
-
-        // Measure the text width based on the current text size.
-        private float getTextWidth(CharSequence source, TextPaint paint) {
-            return paint.measureText(source.toString());
-        }
-
     }
 }

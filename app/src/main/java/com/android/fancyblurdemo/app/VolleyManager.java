@@ -1,6 +1,7 @@
 package com.android.fancyblurdemo.app;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 
 import com.android.fancyblurdemo.volley.RequestQueue;
 import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
@@ -67,5 +68,29 @@ public class VolleyManager {
             throw new IllegalStateException("The VolleyManager must be initialized.");
         }
         return sInstance.mImageLoader;
+    }
+
+    /**
+     * Gets a bitmap from the cache.
+     * @param cacheKey The key used for cache lookup.
+     * @return The bitmap.
+     */
+    public static Bitmap getBitmap(String cacheKey) {
+        if (sInstance == null) {
+            throw new IllegalStateException("You must call init() first.");
+        }
+        return sInstance.mImageCache.getBitmap(cacheKey);
+    }
+
+    /**
+     * Puts a bitmap in the cache.
+     * @param cacheKey The key used for cache lookup.
+     * @param bitmap The bitmap to cache.
+     */
+    public static void putBitmap(String cacheKey, Bitmap bitmap) {
+        if (sInstance == null) {
+            throw new IllegalStateException("You must call init() first.");
+        }
+        sInstance.mImageCache.putBitmap(cacheKey, bitmap);
     }
 }

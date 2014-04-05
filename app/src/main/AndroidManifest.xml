@@ -23,6 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".FlickrDream" android:exported="true" android:label="@string/flickr_dream">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!--<meta-data android:name="android.service.dream" android:resource="@xml/dream_info" />-->
+        </service>
     </application>
 
 </manifest>

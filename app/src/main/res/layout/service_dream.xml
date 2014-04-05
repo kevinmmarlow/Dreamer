@@ -1,12 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             xmlns:roboto="http://schemas.android.com/apk/res-auto"
-             tools:context="com.android.fancyblurdemo.app.MainActivity" >
+       xmlns:roboto="http://schemas.android.com/apk/res-auto">
 
-    <com.android.fancyblurdemo.app.EdgeEffectViewPager
-        android:id="@+id/pager"
+    <AdapterViewFlipper
+        android:id="@+id/viewFlipper"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="@android:color/black"/>
 
     <com.android.fancyblurdemo.app.RobotoTextView
         android:id="@+id/noConnectionView"
@@ -15,6 +15,7 @@
         android:layout_marginLeft="32dp"
         android:layout_marginRight="32dp"
         android:text="@string/no_connection"
+        android:background="@android:color/black"
         android:textColor="@android:color/white"
         android:textSize="44sp"
         android:textAllCaps="true"

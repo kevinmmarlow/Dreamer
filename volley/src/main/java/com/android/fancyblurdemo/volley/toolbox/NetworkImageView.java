@@ -18,6 +18,7 @@ package com.android.fancyblurdemo.volley.toolbox;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.ViewGroup.LayoutParams;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -116,6 +117,8 @@ public class NetworkImageView extends ImageView {
         int width = getWidth();
         int height = getHeight();
 
+//        Log.i("TAG", "Is loading from layout " + isInLayoutPass);
+
         boolean wrapWidth = false, wrapHeight = false;
         if (getLayoutParams() != null) {
             wrapWidth = getLayoutParams().width == LayoutParams.WRAP_CONTENT;
@@ -206,6 +209,7 @@ public class NetworkImageView extends ImageView {
     }
 
     private void setDefaultImageOrNull() {
+        Log.i("TAG", "Set default.");
         if(mDefaultImageId != 0) {
             setImageResource(mDefaultImageId);
         }

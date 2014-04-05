@@ -78,11 +78,11 @@ public class BlurManager {
      * @param cacheKey The key used for cache lookup.
      * @return The bitmap.
      */
-    public Bitmap getBitmap(String cacheKey) {
-        if (mImageCache == null) {
+    public static Bitmap getBitmap(String cacheKey) {
+        if (sInstance == null) {
             throw new IllegalStateException("You must call init() first.");
         }
-        return mImageCache.getBitmap(cacheKey);
+        return sInstance.mImageCache.getBitmap(cacheKey);
     }
 
     /**
@@ -90,10 +90,10 @@ public class BlurManager {
      * @param cacheKey The key used for cache lookup.
      * @param bitmap The bitmap to cache.
      */
-    public void putBitmap(String cacheKey, Bitmap bitmap) {
-        if (mImageCache == null) {
+    public static void putBitmap(String cacheKey, Bitmap bitmap) {
+        if (sInstance == null) {
             throw new IllegalStateException("You must call init() first.");
         }
-        mImageCache.putBitmap(cacheKey, bitmap);
+        sInstance.mImageCache.putBitmap(cacheKey, bitmap);
     }
 }
