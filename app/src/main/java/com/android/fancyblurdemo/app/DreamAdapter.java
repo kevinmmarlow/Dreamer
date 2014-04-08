@@ -23,12 +23,15 @@ import com.android.fancyblurdemo.volley.toolbox.NetworkImageView;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Created by kevin.marlow on 4/4/14.
+ * <p>The adapter used by the {@link android.widget.AdapterViewFlipper}
+ * in the {@link FlickrDream}.</p>
+ *
+ * <p>This adapter is responsible for downloading and displaying the Flickr
+ * images asynchronously.</p>
  */
 public class DreamAdapter extends BaseAdapter {
 
@@ -39,7 +42,9 @@ public class DreamAdapter extends BaseAdapter {
     private int[] textSizes;
     private int screenWidth;
     private int screenHeight;
+    private boolean mIsFirstRunThrough = false;
 
+    @SuppressWarnings("deprecation")
     public DreamAdapter(Context context, List<FlickrPhoto> photos) {
         mContext = context;
         this.photos = photos;
@@ -82,7 +87,7 @@ public class DreamAdapter extends BaseAdapter {
             convertView = ((LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.service_inner_dream, null);
 
             holder = new DreamViewHolder();
-            holder.mImageView = (NetworkImageView) convertView.findViewById(R.id.flickrView);
+            holder.mImageView = (NetworkImageView) convertView.findViewById(R.id.flickrDreamView);
             holder.mBlurImageView = (BlurImageView) convertView.findViewById(R.id.blurView);
             holder.mProgressBar = (ProgressBar) convertView.findViewById(R.id.progressBar);
             holder.mOverlay = convertView.findViewById(R.id.overlay);
@@ -128,13 +133,32 @@ public class DreamAdapter extends BaseAdapter {
 
         holder.mImageView.setImageUrl(FlickrDream.sUseHighRes ? getItem(position).highResUrl : getItem(position).photoUrl, VolleyManager.getImageLoader(), true);
 
+        if (mIsFirstRunThrough) {
+            final int width = holder.mImageView.getWidth();
+            final int height = holder.mImageView.getHeight();
+            VolleyManager.getImageLoader().get((FlickrDream.sUseHighRes ? getItem((position + 1) % getCount()).highResUrl : getItem((position + 1) % getCount()).photoUrl), new ImageLoader.ImageListener() {
+                @Override
+                public void onResponse(ImageLoader.ImageContainer response, boolean isImmediate) {
+                    // Do Nothing. We are just caching early.
+                }
+
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    // Do Nothing. We are just caching early.
+                }
+            }, width, height);
+        }
+
+        if (position == getCount() - 1) {
+            mIsFirstRunThrough = false;
+        }
+
         return convertView;
     }
 
     public void cancelAllTasks() {
-        Iterator<TextSizeTask> iterator = mCurrentTasks.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().cancel(true);
+        for (TextSizeTask task : mCurrentTasks) {
+            task.cancel(true);
         }
     }
 

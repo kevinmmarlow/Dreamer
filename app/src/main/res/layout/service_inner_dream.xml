@@ -8,7 +8,7 @@
                 android:paddingRight="1dp">
 
     <com.android.fancyblurdemo.volley.toolbox.NetworkImageView
-        android:id="@+id/flickrView"
+        android:id="@+id/flickrDreamView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"/>
@@ -38,9 +38,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_margin="@dimen/title_text_margin"
+        android:ellipsize="none"
         android:gravity="center"
         android:textAllCaps="true"
-        android:ellipsize="none"
         android:textColor="@android:color/white"
         roboto:fontFace="condensed"/>
 
