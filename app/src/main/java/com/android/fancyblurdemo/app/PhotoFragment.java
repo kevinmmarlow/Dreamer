@@ -1,6 +1,9 @@
 package com.android.fancyblurdemo.app;
 
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -141,6 +144,7 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
         new TextSizeTask(paint, width, height).execute(mCurrentPhoto.title, mCurrentPhoto.preferredWidthStr);
 
         mTitleText.setVisibility(View.GONE);
+//        mIsTitleShown = true;
 
         mFadeIn = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in);
         mFadeInWithDelay = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in_with_delay);
@@ -160,8 +164,26 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
                     Animation fullFadeIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_in);
                     fullFadeIn.setFillAfter(true);
                     mOverlay.startAnimation(fullFadeIn);
-                    mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
-                    mBlurImageView.setImageAlpha(0);
+
+                    int mTextWidth, mTextHeight; // Our calculated text bounds
+                    final String text = mCurrentPhoto.title;
+                    final TextPaint paint = mTitleText.getPaint();
+
+                    Rect textBounds = new Rect();
+                    paint.getTextBounds(text, 0, text.length(), textBounds);
+                    mTextWidth = (int) paint.measureText(text); // Use measureText to calculate width
+                    mTextHeight = textBounds.height(); // Use height from getTextBounds()
+
+                    Path path = new Path();
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setStrokeJoin(Paint.Join.MITER);
+                    paint.setStrokeMiter(2);
+                    paint.setStrokeWidth(1);
+
+                    paint.getTextPath(text, 0, text.length(), mTitleText.getWidth() / 2 - (mTextWidth / 2f), mTitleText.getHeight() / 2 + (mTextHeight / 2f), path);
+
+                    mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), path, BlurManager.getImageBlurrer());
+                    mBlurImageView.setImageAlpha(255);
                     mProgressBar.setVisibility(View.GONE);
                     if (!mIsTitleShown && (mHasHadCallback || mIsImageShown)) {
                         mTitleText.setVisibility(View.VISIBLE);
@@ -191,7 +213,7 @@ public class PhotoFragment extends Fragment implements View.OnClickListener {
      * @param alpha The alpha value.
      */
     public void setPageAlpha(float alpha) {
-        mBlurImageView.setImageAlpha((int) (255 * alpha));
+//        mBlurImageView.setImageAlpha((int) (255 * alpha));
     }
 
     /**

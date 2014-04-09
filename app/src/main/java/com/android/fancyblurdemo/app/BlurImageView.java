@@ -2,6 +2,12 @@ package com.android.fancyblurdemo.app;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -24,6 +30,7 @@ public class BlurImageView extends ImageView {
 
     /** Current BlurredImageContainer. */
     private ImageBlurrer.BlurredImageContainer mBlurredImageContainer;
+    private Path mClipPath;
 
     public BlurImageView(Context context) {
         this(context, null);
@@ -53,6 +60,14 @@ public class BlurImageView extends ImageView {
     public void setImageToBlur(Bitmap bitmapToBlur, String requestUrl, ImageBlurrer imageBlurrer) {
         mImageBlurrer = imageBlurrer;
         mRequestUrl = requestUrl;
+        // The URL has potentially changed. See if we need to load it.
+        loadImageIfNecessary(bitmapToBlur, false);
+    }
+
+    public void setImageToBlur(Bitmap bitmapToBlur, String requestUrl, Path clipToPath, ImageBlurrer imageBlurrer) {
+        mImageBlurrer = imageBlurrer;
+        mRequestUrl = requestUrl;
+        mClipPath = clipToPath;
         // The URL has potentially changed. See if we need to load it.
         loadImageIfNecessary(bitmapToBlur, false);
     }
@@ -102,7 +117,26 @@ public class BlurImageView extends ImageView {
                     }
 
                     if (blurredResponse.getBitmap() != null) {
-                        setImageBitmap(blurredResponse.getBitmap());
+                        if (mClipPath != null) {
+                            Bitmap resultingImage = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+                            Canvas canvas = new Canvas(resultingImage);
+
+                            Paint paint = new Paint();
+                            paint.setFilterBitmap(true);
+                            paint.setAntiAlias(true);
+
+                            canvas.drawPath(mClipPath, paint);
+
+                            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+                            Rect src = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+                            Rect bounds = new Rect();
+                            getDrawingRect(bounds);
+                            canvas.drawBitmap(blurredResponse.getBitmap(), src, bounds, paint);
+
+                            setImageBitmap(resultingImage);
+                        } else {
+                            setImageBitmap(blurredResponse.getBitmap());
+                        }
                     }
                 }
 

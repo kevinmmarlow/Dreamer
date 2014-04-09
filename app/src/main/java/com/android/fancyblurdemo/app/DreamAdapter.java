@@ -15,7 +15,6 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.BaseAdapter;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.android.fancyblurdemo.volley.VolleyError;
 import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
@@ -172,10 +171,10 @@ public class DreamAdapter extends BaseAdapter {
 
     private class TextSizeTask extends PreCompositeTextTask {
 
-        private TextView mTextView;
+        private RobotoTextView mTextView;
         private int mPosition;
 
-        public TextSizeTask(TextView titleText, int maxWidth, int maxHeight, int position) {
+        public TextSizeTask(RobotoTextView titleText, int maxWidth, int maxHeight, int position) {
             super(titleText.getPaint(), maxWidth, maxHeight);
             mTextView = titleText;
             mPosition = position;

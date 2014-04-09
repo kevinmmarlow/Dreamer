@@ -2,7 +2,14 @@ package com.android.fancyblurdemo.app;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PathMeasure;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
@@ -19,6 +26,8 @@ import android.widget.TextView;
  */
 public class RobotoTextView extends TextView {
 
+    private final Point mCenter;
+
     public RobotoTextView(Context context) {
         this(context, null);
     }
@@ -30,6 +39,8 @@ public class RobotoTextView extends TextView {
     public RobotoTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
+        mCenter = new Point();
+        
         if(!isInEditMode()) {
             if (attrs != null) {
                 TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.RobotoTextView, defStyle, 0);
@@ -74,4 +85,53 @@ public class RobotoTextView extends TextView {
         }
         setTypeface(tf);
     }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec) - getPaddingTop() - getPaddingBottom();
+        mCenter.x = widthSize / 2;
+        mCenter.y = heightSize / 2;
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+
+        int mTextWidth, mTextHeight; // Our calculated text bounds
+
+        final String text = (String) getText();
+        TextPaint paint = getPaint();
+        // Now lets calculate the size of the text
+        Rect textBounds = new Rect();
+        paint.getTextBounds(text, 0, text.length(), textBounds);
+        mTextWidth = (int) paint.measureText(text); // Use measureText to calculate width
+        mTextHeight = textBounds.height(); // Use height from getTextBounds()
+//
+//        // Later when you draw...
+//        canvas.drawText(mText, // Text to display
+//                mCenter.x - (mTextWidth / 2f),
+//                mCenter.y + (mTextHeight / 2f),
+//                mTextPaint);
+
+        Path path = new Path();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.MITER);
+        paint.setStrokeMiter(2);
+        paint.setStrokeWidth(1);
+
+        paint.getTextPath(text, 0, text.length(), mCenter.x - (mTextWidth / 2f), mCenter.y + (mTextHeight / 2f), path);
+
+        PathMeasure measure = new PathMeasure(path, false);
+        float length = measure.getLength();
+
+//        PathEffect effect = new DashPathEffect(new float[] { length, length }, 1.0f);
+//        paint.setPathEffect(effect);
+
+//        canvas.drawPath(path, mTextPaint);
+        super.onDraw(canvas);
+
+//        Log.i("TAG", mCenter.toString() + ". Path: " + path.toString());
+    }
+
 }
