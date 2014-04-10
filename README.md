@@ -19,4 +19,4 @@ This app showcases the use of Google Volley and a fast asynchronous image blur. 
 * Custom Bitmap cropping around text.
 * Bitmap merging.
 
-The current release can be found [here](https://github.com/kevinmmarlow/FancyBlur/releases/latest).
+The current release can be found [here](https://github.com/kevinmmarlow/Dreamer/releases/latest).
