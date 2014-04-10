@@ -15,3 +15,5 @@ This app showcases the use of Google Volley and a fast asynchronous image blur. 
 
 ###Features in progress
 * Unit testing.
+
+The current release can be found [here](https://github.com/kevinmmarlow/FancyBlur/releases/download/v1.2/FancyBlur.apk).
