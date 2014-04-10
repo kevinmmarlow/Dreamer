@@ -10,11 +10,12 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.service.dreams.DreamService;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterViewFlipper;
 
 import com.android.fancyblurdemo.volley.Response;
 import com.android.fancyblurdemo.volley.VolleyError;
@@ -31,12 +32,12 @@ public class FlickrDream extends DreamService {
     private static final String FLICKR_API_SECRET = "5b38c304eda85d6a";
     private static final String FLICKR_INTERESTING_PHOTOS_URL = "https://api.flickr.com/services/rest/?method=flickr.interestingness.getList&api_key=%s&format=json&per_page=50";
 
-    private static final long SCROLL_DELAY = 4000; // 4 second scroll delay.
+    private static final long SCROLL_DELAY = 5000; // 5 second scroll delay.
 
     /**
-     * The {@link AdapterViewFlipper} that will host the section contents.
+     * The {@link EdgeEffectViewPager} that will host the page contents.
      */
-    private AdapterViewFlipper mAdapterViewFlipper;
+    private EdgeEffectViewPager mViewPager;
     private DreamAdapter mAdapter;
 
     /**
@@ -50,6 +51,7 @@ public class FlickrDream extends DreamService {
     public static boolean sUseHighRes = false;
     private boolean mIsConnected = false;
     private ConnectionReceiver mConnectionReceiver;
+    private boolean mForwardScroll = true;
 
     private Animation mFadeIn;
     private Animation mFadeOut;
@@ -58,8 +60,19 @@ public class FlickrDream extends DreamService {
     private Runnable mScroller = new Runnable() {
         @Override
         public void run() {
-            mAdapterViewFlipper.showNext();
-            mScrollHandler.postDelayed(mScroller, SCROLL_DELAY);
+            if (mViewPager != null && mAdapter != null && mAdapter.getCount() > 1) {
+                if (mViewPager.getCurrentItem() + 1 >= mAdapter.getCount()) {
+                    mForwardScroll = false;
+                } else if (mForwardScroll == false && mViewPager.getCurrentItem() == 0) {
+                    mForwardScroll = true;
+                }
+                if (mForwardScroll) {
+                    mViewPager.setCurrentItem(mViewPager.getCurrentItem() + 1, true);
+                } else {
+                    mViewPager.setCurrentItem(mViewPager.getCurrentItem() - 1, true);
+                }
+                mScrollHandler.postDelayed(mScroller, SCROLL_DELAY);
+            }
         }
     };
 
@@ -71,15 +84,16 @@ public class FlickrDream extends DreamService {
         setScreenBright(true);
         setFullscreen(true);
 
-        mAdapterViewFlipper = (AdapterViewFlipper) findViewById(R.id.viewFlipper);
-        mAdapterViewFlipper.setInAnimation(FlickrDream.this, R.anim.slide_in_left);
-        mAdapterViewFlipper.setOutAnimation(FlickrDream.this, R.anim.slide_out_left);
+        sUseHighRes = getResources().getBoolean(R.bool.isTablet);
+
+        mViewPager = (EdgeEffectViewPager) findViewById(R.id.viewPager);
+        mViewPager.setInterpolator(new AccelerateDecelerateInterpolator());
+        mViewPager.setScrollDurationFactor(sUseHighRes ? 3 : 2);
+        mViewPager.setOnPageChangeListener(new PageChangeListener());
 
         mNoConnectionView = (RobotoTextView) findViewById(R.id.noConnectionView);
         mFadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
         mFadeOut = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-
-        sUseHighRes = getResources().getBoolean(R.bool.isTablet);
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -95,6 +109,16 @@ public class FlickrDream extends DreamService {
         }
     }
 
+    private class PageChangeListener extends ViewPager.SimpleOnPageChangeListener {
+
+        @Override
+        public void onPageSelected(int position) {
+            super.onPageSelected(position);
+            // Do fade title callbacks.
+            mAdapter.showTitle(mViewPager.getCurrentItem());
+        }
+    }
+
     @Override
     public void onDetachedFromWindow() {
         if (mConnectionReceiver != null) {
@@ -102,6 +126,10 @@ public class FlickrDream extends DreamService {
             unregisterReceiver(receiver);
             mConnectionReceiver = null;
         }
+        mAdapter.cancelAllTasks();
+        mScrollHandler.removeCallbacks(mScroller);
+        mViewPager = null;
+        mAdapter = null;
         super.onDetachedFromWindow();
     }
 
@@ -126,7 +154,9 @@ public class FlickrDream extends DreamService {
         @Override
         public void onResponse(List<FlickrPhoto> response) {
             mAdapter = new DreamAdapter(FlickrDream.this, response);
-            mAdapterViewFlipper.setAdapter(mAdapter);
+            mViewPager.setAdapter(mAdapter);
+            mAdapter.notifyDataSetChanged();
+            mAdapter.showTitle(0);
             mScrollHandler.postDelayed(mScroller, SCROLL_DELAY);
         }
     }

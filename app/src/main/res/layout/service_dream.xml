@@ -2,8 +2,8 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
        xmlns:roboto="http://schemas.android.com/apk/res-auto">
 
-    <AdapterViewFlipper
-        android:id="@+id/viewFlipper"
+    <com.android.fancyblurdemo.app.EdgeEffectViewPager
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/black"/>

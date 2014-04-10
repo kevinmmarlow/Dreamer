@@ -23,6 +23,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -44,7 +45,7 @@ public class MainActivity extends FragmentActivity {
     private static final String ARG_HAS_DOWNLOADED = "has_downloaded";
     private static final String ARG_USER_LEARNED_SCROLL = "user_scrolled";
 
-    private static final long SCROLL_DELAY = 4000; // 4 second scroll delay.
+    private static final long SCROLL_DELAY = 5000; // 5 second scroll delay.
 
     /**
      * Data store. The photomap maps the photo id to the photo for easy retrieval.
@@ -140,7 +141,9 @@ public class MainActivity extends FragmentActivity {
         mViewPager = (EdgeEffectViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.setOnPageChangeListener(mPageChangeListener);
-        mViewPager.setScrollDurationFactor(sUseHighRes ? 5 : 3);
+        mViewPager.setScrollDurationFactor(sUseHighRes ? 3 : 2);
+        mViewPager.setInterpolator(new AccelerateDecelerateInterpolator());
+
         mViewPager.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {

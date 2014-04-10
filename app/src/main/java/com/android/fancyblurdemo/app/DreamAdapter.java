@@ -3,8 +3,9 @@ package com.android.fancyblurdemo.app;
 import android.content.Context;
 import android.graphics.Point;
 import android.os.Build;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -13,7 +14,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.BaseAdapter;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -33,11 +33,12 @@ import java.util.Set;
  * <p>This adapter is responsible for downloading and displaying the Flickr
  * images asynchronously.</p>
  */
-public class DreamAdapter extends BaseAdapter {
+public class DreamAdapter extends PagerAdapter {
 
     private final Animation mFadeInWithDelay;
     private Context mContext;
     private List<FlickrPhoto> photos = new ArrayList<FlickrPhoto>();
+    private ArrayList<View> mViews = new ArrayList<View>();
     private Set<TextSizeTask> mCurrentTasks = new HashSet<TextSizeTask>();
     private int[] textSizes;
     private int screenWidth;
@@ -70,16 +71,33 @@ public class DreamAdapter extends BaseAdapter {
     }
 
     @Override
+    public boolean isViewFromObject(View view, Object object) {
+        boolean isView = object == view;
+        return isView;
+    }
+
     public FlickrPhoto getItem(int position) {
         return photos.get(position);
     }
 
     @Override
-    public long getItemId(int position) {
-        return position;
+    public View instantiateItem(ViewGroup container, int position) {
+        View v = getView(position, mViews.size() < position ? mViews.get(position) : null, container);
+        while (mViews.size() <= position) {
+            mViews.add(null);
+        }
+        mViews.set(position, v);
+        ((ViewPager) container).addView(v, 0);
+        return v;
     }
 
     @Override
+    public void destroyItem(ViewGroup container, int position, Object object) {
+        View view = (View) object;
+        mViews.set(position, null);
+        container.removeView(view);
+    }
+
     public View getView(int position, View convertView, ViewGroup parent) {
 
         final DreamViewHolder holder;
@@ -120,8 +138,6 @@ public class DreamAdapter extends BaseAdapter {
 //                    mBlurImageView.setImageToBlur(response.getBitmap(), response.getRequestUrl(), BlurManager.getImageBlurrer());
 //                    mBlurImageView.setImageAlpha(0);
                     holder.mProgressBar.setVisibility(View.GONE);
-                    holder.mTitleText.setVisibility(View.VISIBLE);
-                    holder.mTitleText.startAnimation(mFadeInWithDelay);
                 }
             }
 
@@ -162,6 +178,14 @@ public class DreamAdapter extends BaseAdapter {
         }
     }
 
+    public void showTitle(int currentItem) {
+        if (mViews.get(currentItem) != null) {
+            DreamViewHolder holder = (DreamViewHolder) mViews.get(currentItem).getTag();
+            holder.mTitleText.setVisibility(View.VISIBLE);
+            holder.mTitleText.startAnimation(mFadeInWithDelay);
+        }
+    }
+
     private class DreamViewHolder {
         public NetworkImageView mImageView;
         public BlurImageView mBlurImageView;
@@ -185,7 +209,7 @@ public class DreamAdapter extends BaseAdapter {
         public void doOnComplete(int textSize) {
             mTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
             textSizes[mPosition] = textSize;
-            Log.i("TAG", "Text size " + textSize);
+//            Log.i("TAG", "Text size " + textSize);
         }
 
         @Override

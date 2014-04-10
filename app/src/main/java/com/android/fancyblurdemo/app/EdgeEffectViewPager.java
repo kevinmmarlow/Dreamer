@@ -28,6 +28,8 @@ import java.lang.reflect.Field;
  */
 public class EdgeEffectViewPager extends ViewPager {
 
+    private Interpolator mInterpolator;
+
     public EdgeEffectViewPager(Context context) {
         this(context, null);
     }
@@ -60,7 +62,7 @@ public class EdgeEffectViewPager extends ViewPager {
             Field interpolator = ViewPager.class.getDeclaredField("sInterpolator");
             interpolator.setAccessible(true);
 
-            mScroller = new FlickrScroller(getContext(), (Interpolator) interpolator.get(null));
+            mScroller = new FlickrScroller(getContext(), mInterpolator == null ? (Interpolator) interpolator.get(null) : mInterpolator);
             scroller.set(this, mScroller);
         } catch (Exception e) {
         }
@@ -70,6 +72,13 @@ public class EdgeEffectViewPager extends ViewPager {
      * Set the factor by which the duration will change
      */
     public void setScrollDurationFactor(double scrollFactor) {
-        mScroller.setScrollDurationFactor(scrollFactor);
+        mScroller.setScrollFactor(scrollFactor);
+    }
+
+    public void setInterpolator(Interpolator interpolator) {
+        final double scrollFactor = mScroller.getScrollFactor();
+        mInterpolator = interpolator;
+        postInitViewPager();
+        mScroller.setScrollFactor(scrollFactor);
     }
 }

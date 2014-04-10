@@ -26,12 +26,16 @@ public class FlickrScroller extends Scroller {
     /**
      * Set the factor by which the duration will change
      */
-    public void setScrollDurationFactor(double scrollFactor) {
+    public void setScrollFactor(double scrollFactor) {
         mScrollFactor = scrollFactor;
     }
 
     @Override
     public void startScroll(int startX, int startY, int dx, int dy, int duration) {
         super.startScroll(startX, startY, dx, dy, (int) (duration * mScrollFactor));
+    }
+
+    public double getScrollFactor() {
+        return mScrollFactor;
     }
 }
