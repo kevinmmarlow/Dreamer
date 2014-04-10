@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">FancyBlur</string>
+    <string name="app_name">Dreamer</string>
     <string name="action_settings">Settings</string>
     <string name="no_connection">Unable to connect. Please check your internet settings.</string>
     <string name="flickr_dream">FlickrDream</string>
