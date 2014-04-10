@@ -23,7 +23,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -142,7 +141,6 @@ public class MainActivity extends FragmentActivity {
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.setOnPageChangeListener(mPageChangeListener);
         mViewPager.setScrollDurationFactor(sUseHighRes ? 3 : 2);
-        mViewPager.setInterpolator(new AccelerateDecelerateInterpolator());
 
         mViewPager.setOnTouchListener(new View.OnTouchListener() {
             @Override
