@@ -1,4 +1,4 @@
-FancyBlur
+Dreamer
 ========
 
 This app showcases the use of Google Volley and a fast asynchronous image blur. The photos for this app are provided by Flickr's current interesting photos.
