@@ -12,8 +12,11 @@ This app showcases the use of Google Volley and a fast asynchronous image blur. 
 * Proper connectivity monitoring.
 * Custom typeface implementation.
 * Custom themeing.
+* DayDream mode.
 
 ###Features in progress
 * Unit testing.
+* Custom Bitmap cropping around text.
+* Bitmap merging.
 
-The current release can be found [here](https://github.com/kevinmmarlow/FancyBlur/releases/download/v1.2/FancyBlur.apk).
+The current release can be found [here](https://github.com/kevinmmarlow/FancyBlur/releases/latest).
