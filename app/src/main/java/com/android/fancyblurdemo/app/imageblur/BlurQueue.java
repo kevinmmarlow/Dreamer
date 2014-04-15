@@ -1,8 +1,10 @@
 package com.android.fancyblurdemo.app.imageblur;
 
+import android.media.RemoteControlClient;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.android.fancyblurdemo.volley.Cache;
 import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
 
 import java.util.HashSet;
@@ -97,5 +99,9 @@ public class BlurQueue {
         synchronized (mCurrentRequests) {
             mCurrentRequests.remove(request);
         }
+    }
+
+    public ImageLoader.ImageCache getCache() {
+        return mBlurCache;
     }
 }

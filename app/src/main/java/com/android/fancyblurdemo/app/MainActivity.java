@@ -26,8 +26,11 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
+import com.android.fancyblurdemo.app.imageblur.BlurManager;
+import com.android.fancyblurdemo.app.imageblur.DiskLruImageCache;
 import com.android.fancyblurdemo.volley.Response;
 import com.android.fancyblurdemo.volley.VolleyError;
+import com.android.fancyblurdemo.volley.toolbox.ImageLoader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -186,6 +189,16 @@ public class MainActivity extends FragmentActivity {
             mConnectionReceiver = null;
         }
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        VolleyManager.getRequestQueue().getCache().clear();
+        ImageLoader.ImageCache cache = BlurManager.getBlurQueue().getCache();
+        if (cache instanceof  DiskLruImageCache) {
+            ((DiskLruImageCache) cache).clearCache();
+        }
+        super.onDestroy();
     }
 
     @Override
