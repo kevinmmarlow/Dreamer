@@ -192,16 +192,6 @@ public class MainActivity extends FragmentActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        VolleyManager.getRequestQueue().getCache().clear();
-        ImageLoader.ImageCache cache = BlurManager.getBlurQueue().getCache();
-        if (cache instanceof  DiskLruImageCache) {
-            ((DiskLruImageCache) cache).clearCache();
-        }
-        super.onDestroy();
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         
         // Inflate the menu; this adds items to the action bar if it is present.
