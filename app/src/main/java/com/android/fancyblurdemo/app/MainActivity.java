@@ -140,7 +140,7 @@ public class MainActivity extends FragmentActivity {
         mViewPager = (EdgeEffectViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.setOnPageChangeListener(mPageChangeListener);
-        mViewPager.setScrollDurationFactor(sUseHighRes ? 3 : 2);
+        mViewPager.setScrollDurationFactor(sUseHighRes ? 5 : 3);
 
         mViewPager.setOnTouchListener(new View.OnTouchListener() {
             @Override
